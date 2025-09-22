@@ -1,0 +1,16 @@
+# Node.js
+node_modules/
+dist/
+logs/
+uploads/
+.env
+
+# Python
+ai-service/venv/
+ai-service/__pycache__/
+ai-service/*.pyc
+ai-service/.env
+
+# General
+.DS_Store
+
