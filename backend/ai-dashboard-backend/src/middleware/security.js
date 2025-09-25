@@ -1,4 +1,3 @@
-// src/middleware/security.js
 import helmet from "helmet";
 import mongoSanitize from "express-mongo-sanitize";
 import xss from "xss-clean";

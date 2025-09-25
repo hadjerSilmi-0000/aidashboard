@@ -1,8 +1,7 @@
 import { Server } from "socket.io";
 import { registerEventHandlers } from "./eventHandlers.js";
 import socketService from "../services/socketService.js";
-import { verifyAccessToken } from "../config/jwt.js"; // adjust if your JWT utils live elsewhere
-
+import { JWTManager } from "../config/jwt.js";
 let io;
 
 export function initSocket(server) {
@@ -17,21 +16,21 @@ export function initSocket(server) {
     socketService.setIO(io);
 
     io.on("connection", (socket) => {
-        console.log(`⚡ Client connected: ${socket.id}`);
+        console.log(`Client connected: ${socket.id}`);
 
         try {
             // Expect JWT token in handshake auth
             const token = socket.handshake.auth?.token;
             if (!token) {
-                console.warn("❌ No token provided, disconnecting...");
+                console.warn("No token provided, disconnecting...");
                 socket.disconnect();
                 return;
             }
 
-            const user = verifyAccessToken(token); // { _id, role, ... }
+            const user = JWTManager(token);
 
             if (!user?._id) {
-                console.warn("❌ Invalid user, disconnecting...");
+                console.warn(" Invalid user, disconnecting...");
                 socket.disconnect();
                 return;
             }
@@ -47,16 +46,16 @@ export function initSocket(server) {
                 socket.join(`role:${user.role}`);
             }
 
-            console.log(`✅ User ${user._id} joined rooms: dashboard, ${user._id}, role:${user.role}`);
+            console.log(` User ${user._id} joined rooms: dashboard, ${user._id}, role:${user.role}`);
 
             // Register any custom event handlers
             registerEventHandlers(socket);
 
             socket.on("disconnect", () => {
-                console.log(`👋 User ${user._id} disconnected (${socket.id})`);
+                console.log(`User ${user._id} disconnected (${socket.id})`);
             });
         } catch (err) {
-            console.error("❌ Socket auth error:", err.message);
+            console.error(" Socket auth error:", err.message);
             socket.disconnect();
         }
     });

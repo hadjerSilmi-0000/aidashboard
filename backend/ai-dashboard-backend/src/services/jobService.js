@@ -1,9 +1,7 @@
-// src/services/jobService.js
 import { fileQueue } from "../queues/fileQueue.js";
 
-/**
- * Enqueue a new file job
- */
+// Enqueue a new file job
+
 export async function enqueueFileJob(fileId) {
     const job = await fileQueue.add("process-file", { fileId }, { attempts: 3, backoff: 5000 });
     return {
@@ -14,9 +12,8 @@ export async function enqueueFileJob(fileId) {
     };
 }
 
-/**
- * Get job status by ID
- */
+// Get job status by ID
+
 export async function getJobStatus(jobId) {
     const job = fileQueue.getJob(parseInt(jobId, 10));
     if (!job) return null;
@@ -30,9 +27,8 @@ export async function getJobStatus(jobId) {
     };
 }
 
-/**
- * Cancel a job by ID
- */
+// Cancel a job by ID
+
 export async function cancelJob(jobId) {
     const job = fileQueue.getJob(parseInt(jobId, 10));
     if (!job) return false;
@@ -42,9 +38,8 @@ export async function cancelJob(jobId) {
     return true;
 }
 
-/**
- * Get queue statistics
- */
+// Get queue statistics
+
 export async function getQueueStats() {
     const jobs = fileQueue.getJobs();
     return {

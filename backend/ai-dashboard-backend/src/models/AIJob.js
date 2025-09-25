@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const aiJobSchema = new mongoose.Schema(
     {
-        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: false }, // optional link to user
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: false },
         dataset: { type: Object, required: true },
         type: {
             type: String,

@@ -1,13 +1,12 @@
 import * as notificationService from "../services/notificationService.js";
 
-/**
- * List notifications (paginated)
- */
+
+// List notifications (paginated)
 export async function listNotifications(req, res, next) {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 20;
-        const userId = req.user._id; // from auth middleware
+        const userId = req.user._id;
 
         const notifications = await notificationService.getNotifications(userId, page, limit);
         const unreadCount = await notificationService.getUnreadCount(userId);
@@ -24,9 +23,8 @@ export async function listNotifications(req, res, next) {
     }
 }
 
-/**
- * Mark single notification as read
- */
+
+// Mark single notification as read
 export async function markAsRead(req, res, next) {
     try {
         const { id } = req.params;
@@ -40,9 +38,8 @@ export async function markAsRead(req, res, next) {
     }
 }
 
-/**
- * Mark all notifications as read for current user
- */
+
+// Mark all notifications as read for current user
 export async function markAllAsRead(req, res, next) {
     try {
         const userId = req.user._id;
@@ -53,9 +50,8 @@ export async function markAllAsRead(req, res, next) {
     }
 }
 
-/**
- * Delete a notification
- */
+
+// Delete a notification
 export async function deleteNotification(req, res, next) {
     try {
         const { id } = req.params;
@@ -69,9 +65,8 @@ export async function deleteNotification(req, res, next) {
     }
 }
 
-/**
- * Get notification stats (unread count, total)
- */
+
+// Get notification stats (unread count, total)
 export async function getStats(req, res, next) {
     try {
         const userId = req.user._id;

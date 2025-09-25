@@ -5,7 +5,6 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
 import { setupSwagger } from "./config/swagger.js";
-
 import logger from "./utils/logger.js";
 import analyticsRoutes from "./routes/analytics.js";
 
@@ -14,6 +13,8 @@ import authRoutes from "./routes/auth.js";
 import fileRoutes from "./routes/files.js";
 import jobRoutes from "./routes/jobs.js";
 import aiJobRoutes from "./routes/aijob.js";
+import notificationRoutes from "./routes/notifications.js";
+import adminRoutes from "./routes/admin.js";
 
 const app = express();
 
@@ -150,7 +151,8 @@ app.use("/api/files", fileRoutes);
 app.use("/api/jobs", jobRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/ai/jobs", aiJobRoutes);
-
+app.use("/api/notification", notificationRoutes);
+app.use("/api/admin", adminRoutes);
 // ================= ERROR HANDLING =================
 
 // Error handler
@@ -171,6 +173,7 @@ app.use((err, req, res, next) => {
 });
 
 // Not found handler
+// Not found handler (must take req, res)
 app.use((req, res) => {
     res.status(404).json({
         success: false,
@@ -180,11 +183,14 @@ app.use((req, res) => {
             auth: "/api/auth/*",
             files: "/api/files/*",
             jobs: "/api/jobs/*",
+            notification: "/api/notification/*",
+            admin: "/api/admin/*",
             health: "/health",
             root: "/",
         },
     });
 });
+
 
 setupSwagger(app);
 export default app;

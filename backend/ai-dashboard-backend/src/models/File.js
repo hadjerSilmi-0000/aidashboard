@@ -19,13 +19,13 @@ export const FILE_STATUS = {
 
 const ProcessingStageSchema = new Schema(
     {
-        stage: { type: String, required: true }, // validation, parsing, etc.
+        stage: { type: String, required: true },
         status: {
             type: String,
             enum: ["pending", "in-progress", "completed", "failed"],
             default: "pending",
         },
-        progress: { type: Number, default: 0 }, // %
+        progress: { type: Number, default: 0 },
         error: {
             message: String,
             code: String,
@@ -67,9 +67,7 @@ const FileSchema = new Schema(
     { timestamps: true }
 );
 
-/**
- * Helper methods
- */
+//Helper methods
 FileSchema.methods.addError = async function (stage, message, code, meta = {}) {
     this.errors.push({ stage, message, code, meta });
     this.status = FILE_STATUS.FAILED;

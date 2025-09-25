@@ -1,4 +1,3 @@
-// src/socket/authHandler.js
 import User from "../models/User.js";
 import { JWTManager } from "../config/jwt.js";
 
@@ -15,14 +14,6 @@ function parseCookies(cookieHeader = "") {
     }, {});
 }
 
-/**
- * Attach WebSocket auth middleware to io
- * Expects access token either:
- *  - in socket.handshake.auth.token (recommended from client: io({ auth: { token } }))
- *  - or in cookies: accessToken cookie
- *
- * On success, sets socket.data.user = { userId, role, email }.
- */
 export default function attachAuth(io) {
     io.use(async (socket, next) => {
         try {

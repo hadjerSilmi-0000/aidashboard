@@ -51,7 +51,7 @@ const userSchema = new mongoose.Schema(
             default: USER_STATUS.PENDING,
         },
         notificationPreferences: {
-            mutedTypes: [{ type: String }], // e.g. ["ai_analysis", "system"]
+            mutedTypes: [{ type: String }],
             deliveryChannels: {
                 inApp: { type: Boolean, default: true },
                 email: { type: Boolean, default: false },
@@ -73,9 +73,9 @@ const userSchema = new mongoose.Schema(
                 bio: { type: String, maxlength: 500 },
             },
         },
+    },
+    { timestamps: true }
 
-        timestamps: true
-    }
 );
 
 // Virtuals

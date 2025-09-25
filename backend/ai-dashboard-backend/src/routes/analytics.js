@@ -5,15 +5,17 @@ import {
     fileErrors,
     runFileAnalytics,
 } from "../controllers/analyticsController.js";
-import auth from "../middleware/Auth/requireAuth.js";
+import requireAuth from "../middleware/Auth/requireAuth.js";
+import { requireAdmin } from "../middleware/Auth/roles.js";
+
 const router = express.Router();
 
-// File-level analytics
-router.get("/file/:fileId/overview", auth, fileOverview);
-router.get("/file/:fileId/trends", auth, fileTrends);
-router.get("/file/:fileId/errors", auth, fileErrors);
+// File-level analytics (admin + manager)
+router.get("/file/:fileId/overview", requireAuth, fileOverview);
+router.get("/file/:fileId/trends", requireAuth, fileTrends);
+router.get("/file/:fileId/errors", requireAuth, fileErrors);
 
-// Manual trigger (useful for admin/testing)
-router.post("/file/:fileId/run", auth, runFileAnalytics);
+// Manual re-run of analytics (admin only)
+router.post("/file/:fileId/run", requireAuth, requireAdmin, runFileAnalytics);
 
 export default router;

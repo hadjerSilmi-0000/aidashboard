@@ -1,4 +1,3 @@
-// /src/models/Notification.js
 import mongoose from "mongoose";
 
 const { Schema } = mongoose;
@@ -44,8 +43,8 @@ const notificationSchema = new Schema(
         category: { type: String, enum: ["system", "user", "admin", "ai", "file", "security"], required: true },
         priority: { type: String, enum: Object.values(PRIORITY_LEVELS), default: PRIORITY_LEVELS.MEDIUM },
         recipients: {
-            userId: { type: Schema.Types.ObjectId, ref: "User" },
-            roles: [{ type: String, enum: ["admin", "user", "moderator", "analyst"] }],
+            userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+            roles: [{ type: String, enum: ["admin", "manager"] }],
         },
         delivery: {
             status: { type: String, enum: Object.values(DELIVERY_STATUS), default: DELIVERY_STATUS.PENDING },

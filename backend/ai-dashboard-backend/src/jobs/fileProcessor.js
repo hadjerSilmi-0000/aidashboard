@@ -1,12 +1,10 @@
-// src/jobs/fileProcessor.js
 import File, { FILE_STATUS } from "../models/File.js";
 import Job from "../models/job.js";
 import { processCSVFile, processJSONFile } from "../services/streamProcessor.js";
 import socketService from "../services/socketService.js";
 
-/**
- * Safe wrapper for addError
- */
+
+// Safe wrapper for addError
 async function safeAddError(fileDoc, stage, message, code, details = {}) {
     if (fileDoc && typeof fileDoc.addError === "function") {
         return fileDoc.addError(stage, message, code, details);
@@ -22,9 +20,8 @@ async function safeAddError(fileDoc, stage, message, code, details = {}) {
     return fileDoc.save();
 }
 
-/**
- * Safe wrapper for updateProcessingStage
- */
+
+// Safe wrapper for updateProcessingStage
 async function safeUpdateStage(fileDoc, stage, updates) {
     if (fileDoc && typeof fileDoc.updateProcessingStage === "function") {
         return fileDoc.updateProcessingStage(stage, updates);
@@ -34,9 +31,8 @@ async function safeUpdateStage(fileDoc, stage, updates) {
     return fileDoc.save();
 }
 
-/**
- * Broadcast progress to dashboard
- */
+
+// Broadcast progress to dashboard
 function broadcastProgress(event, { fileId, jobId, stage, progress, status, error, userId }) {
     socketService.broadcast(event, {
         fileId,
@@ -50,22 +46,21 @@ function broadcastProgress(event, { fileId, jobId, stage, progress, status, erro
     });
 }
 
-/**
- * Process file job
- */
+
+//Process file job
 export async function processFileJob(jobData) {
     const { fileId, jobId } = jobData;
 
-    // ✅ Store job in DB
+    // Store job in DB
     let jobDoc = await Job.findOneAndUpdate(
         { jobId },
         { jobId, fileId, status: "active", progress: 0 },
         { upsert: true, new: true }
     );
 
-    // ✅ Handle fake/test jobs
+    //  Handle fake/test jobs
     if (!fileId || !/^[0-9a-fA-F]{24}$/.test(fileId)) {
-        console.log(`⚠️ Skipping DB lookup for test job with fileId=${fileId}`);
+        console.log(` Skipping DB lookup for test job with fileId=${fileId}`);
         jobDoc.status = "completed";
         await jobDoc.save();
         broadcastProgress("file:completed", { fileId, jobId, status: "completed", progress: 100 });
@@ -75,7 +70,7 @@ export async function processFileJob(jobData) {
     const fileDoc = await File.findById(fileId);
     if (!fileDoc) throw new Error("File not found");
 
-    // ✅ Initialize status
+    // Initialize status
     fileDoc.status = FILE_STATUS.PROCESSING;
     fileDoc.processingStages =
         fileDoc.processingStages.length > 0
@@ -89,7 +84,7 @@ export async function processFileJob(jobData) {
             ];
     await fileDoc.save();
 
-    // ✅ Broadcast start
+    // Broadcast start
     broadcastProgress("file:started", {
         fileId,
         jobId,
@@ -102,7 +97,7 @@ export async function processFileJob(jobData) {
     try {
         const ext = fileDoc.fileType?.toLowerCase() || fileDoc.mimeType?.split("/")[1];
 
-        // ✅ Validation stage
+        // Validation stage
         await safeUpdateStage(fileDoc, "validation", { status: "in_progress", progress: 10 });
         broadcastProgress("file:progress", {
             fileId,
@@ -113,7 +108,7 @@ export async function processFileJob(jobData) {
             userId: fileDoc.uploadedBy?.toString(),
         });
 
-        // ✅ Parsing stage
+        // Parsing stage
         await safeUpdateStage(fileDoc, "parsing", { status: "in_progress", progress: 25 });
         broadcastProgress("file:progress", {
             fileId,
@@ -129,7 +124,7 @@ export async function processFileJob(jobData) {
         } else if (ext === "json" || fileDoc.mimeType === "application/json") {
             await processJSONFile(fileDoc, { userId: fileDoc.uploadedBy, jobId });
         } else if (ext === "pdf" || fileDoc.mimeType === "application/pdf") {
-            console.log(`📄 Skipping PDF processing for demo: ${fileDoc.originalName}`);
+            console.log(` Skipping PDF processing for demo: ${fileDoc.originalName}`);
         } else {
             await safeAddError(fileDoc, "parsing", "Unsupported file type", "UNSUPPORTED_TYPE");
             fileDoc.status = FILE_STATUS.FAILED;
@@ -152,7 +147,7 @@ export async function processFileJob(jobData) {
             return { ok: false, reason: "unsupported_type" };
         }
 
-        // ✅ Analysis / completion stage
+        // Analysis / completion stage
         await safeUpdateStage(fileDoc, "analysis", { status: "completed", progress: 100 });
         fileDoc.status = FILE_STATUS.COMPLETED;
         await fileDoc.save();

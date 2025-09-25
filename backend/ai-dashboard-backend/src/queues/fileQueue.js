@@ -1,7 +1,7 @@
 import { createQueue, createWorker, createQueueEvents } from "./index.js";
 import { processFileJob } from "../workers/fileProcessor.js";
 
-export const fileQueue = createQueue("file-processing"); // ✅ Queue instance
+export const fileQueue = createQueue("file-processing");
 
 // Worker (handles jobs)
 createWorker("file-processing", processFileJob, { concurrency: 2 });
@@ -10,9 +10,9 @@ createWorker("file-processing", processFileJob, { concurrency: 2 });
 const fileQueueEvents = createQueueEvents("file-processing");
 
 fileQueueEvents.on("completed", ({ jobId }) => {
-    console.log(`✅ Job ${jobId} completed`);
+    console.log(` Job ${jobId} completed`);
 });
 
 fileQueueEvents.on("failed", ({ jobId, failedReason }) => {
-    console.error(`❌ Job ${jobId} failed: ${failedReason}`);
+    console.error(` Job ${jobId} failed: ${failedReason}`);
 });

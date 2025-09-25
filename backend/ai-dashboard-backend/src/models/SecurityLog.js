@@ -11,24 +11,24 @@ const securityLogSchema = new Schema(
         action: {
             type: String,
             enum: [
-                // ✅ Registration & Email
+                //  Registration & Email
                 "USER_REGISTERED",
                 "EMAIL_VERIFIED",
                 "EMAIL_VERIFICATION_SENT",
                 "EMAIL_VERIFICATION_SUCCESS",
                 "VERIFICATION_EMAIL_RESENT",
 
-                // ✅ Login/Logout
+                // Login/Logout
                 "LOGIN_SUCCESS",
                 "LOGIN_FAILED",
                 "LOGOUT",
                 "ACCOUNT_LOCKED",
 
-                // ✅ Sessions
+                //  Sessions
                 "SESSION_CREATED",
                 "SESSION_REVOKED",
 
-                // ✅ Password
+                // Password
                 "PASSWORD_CHANGED",
                 "PASSWORD_RESET_REQUESTED",
                 "PASSWORD_RESET_SUCCESS",
@@ -44,7 +44,7 @@ const securityLogSchema = new Schema(
             index: true,
         },
 
-        details: { type: Object }, // flexible metadata
+        details: { type: Object },
         timestamp: { type: Date, default: Date.now, index: true },
     },
     { collection: "security_logs" }

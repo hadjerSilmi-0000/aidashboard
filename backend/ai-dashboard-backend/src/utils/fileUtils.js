@@ -14,17 +14,15 @@ export async function generateFileHash(filePath) {
     });
 }
 
-
 // Delete a file from storage safely
 export function deleteFile(filePath) {
     return new Promise((resolve, reject) => {
         fs.unlink(filePath, err => {
-            if (err && err.code !== "ENOENT") return reject(err); // ignore if already removed
+            if (err && err.code !== "ENOENT") return reject(err);
             resolve(true);
         });
     });
 }
-
 
 // Get file extension safely
 export function getFileExtension(filename) {

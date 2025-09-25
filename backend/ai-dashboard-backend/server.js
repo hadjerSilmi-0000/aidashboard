@@ -1,8 +1,7 @@
-// server.js
 import app from "./src/app.js";
 import configManager from "./src/config/index.js";
 import logger from "./src/utils/logger.js";
-import { initSocket } from "./src/socket/socketHandler.js";  // ✅ correct import
+import { initSocket } from "./src/socket/socketHandler.js";
 
 const PORT = process.env.PORT || 5000;
 
@@ -44,7 +43,7 @@ const startServer = async () => {
             );
         });
 
-        // ✅ Initialize socket.io with the HTTP server
+        // Initialize socket.io with the HTTP server
         initSocket(server);
 
         process.on("SIGTERM", gracefulShutdown);

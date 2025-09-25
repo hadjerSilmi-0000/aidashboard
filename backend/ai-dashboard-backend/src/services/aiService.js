@@ -1,8 +1,3 @@
-/**
- * AI Service Client with caching, retries, and error handling
- * Communicates with Python AI service
- */
-
 import axios from "axios";
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || "http://127.0.0.1:8000";
@@ -40,7 +35,7 @@ function sanitizeDataset(dataset) {
     const copy = JSON.parse(JSON.stringify(dataset));
     for (const key of Object.keys(copy)) {
         if (Array.isArray(copy[key]) && copy[key].length > 1000) {
-            copy[key] = copy[key].slice(0, 1000); // limit to 1000 items
+            copy[key] = copy[key].slice(0, 1000);
         }
     }
     return copy;

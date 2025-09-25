@@ -14,7 +14,7 @@ const logger = createLogger({
         format.printf(({ timestamp, level, message, stack }) => {
             // Highlight Ethereal preview URLs in the console
             if (typeof message === "string" && message.includes("ethereal.email/message")) {
-                return `${timestamp} [${level}]: ✉️ Ethereal Preview → ${message}`;
+                return `${timestamp} [${level}]: Ethereal Preview → ${message}`;
             }
             return `${timestamp} [${level}]: ${stack || message}`;
         })

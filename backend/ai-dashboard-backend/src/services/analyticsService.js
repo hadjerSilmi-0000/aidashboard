@@ -1,20 +1,19 @@
-// src/services/analyticsService.js
 import DataPoint from "../models/DataPoint.js";
 import { Types } from "mongoose";
 
 // ---------------- Overview ----------------
 export async function getFileOverview(fileId) {
-    console.log("📊 [analyticsService] getFileOverview called with fileId:", fileId);
+    console.log(" [analyticsService] getFileOverview called with fileId:", fileId);
 
     const result = await DataPoint.getFileAnalytics(fileId);
 
-    console.log("📊 [analyticsService] aggregation result:", JSON.stringify(result, null, 2));
+    console.log("[analyticsService] aggregation result:", JSON.stringify(result, null, 2));
     return result;
 }
 
 // ---------------- Trends ----------------
 export async function getTrends(fileId, range = "day") {
-    console.log("📈 [analyticsService] getTrends", { fileId, range });
+    console.log("[analyticsService] getTrends", { fileId, range });
 
     const id = typeof fileId === "string" ? new Types.ObjectId(fileId) : fileId;
 
@@ -23,7 +22,7 @@ export async function getTrends(fileId, range = "day") {
             ? { $dateToString: { format: "%Y-%m-%d", date: "$timestamp" } }
             : range === "month"
                 ? { $dateToString: { format: "%Y-%m", date: "$timestamp" } }
-                : { $dateToString: { format: "%Y-%U", date: "$timestamp" } }; // week
+                : { $dateToString: { format: "%Y-%U", date: "$timestamp" } };
 
     const result = await DataPoint.aggregate([
         { $match: { fileId: id, $or: [{ isDeleted: false }, { isDeleted: { $exists: false } }] } },
@@ -37,7 +36,7 @@ export async function getTrends(fileId, range = "day") {
 
 // ---------------- Errors ----------------
 export async function getTopErrors(fileId, limit = 10) {
-    console.log("⚠️ [analyticsService] getTopErrors", fileId);
+    console.log("[analyticsService] getTopErrors", fileId);
 
     const id = typeof fileId === "string" ? new Types.ObjectId(fileId) : fileId;
 
@@ -55,13 +54,13 @@ export async function getTopErrors(fileId, limit = 10) {
         { $limit: limit },
     ]);
 
-    console.log("⚠️ [analyticsService] top errors:", result);
+    console.log("[analyticsService] top errors:", result);
     return result;
 }
 
 // ---------------- Full Run ----------------
 export async function runAnalytics(fileId) {
-    console.log("🚀 [analyticsService] runAnalytics", fileId);
+    console.log(" [analyticsService] runAnalytics", fileId);
 
     const [overview, trends, errors] = await Promise.all([
         getFileOverview(fileId),

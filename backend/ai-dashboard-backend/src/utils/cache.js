@@ -37,7 +37,7 @@ export const storeEmailVerification = async (token, userId, expiresIn = 86400) =
 export const validateEmailVerification = async (token) => {
     const key = `${PREFIX.EMAIL_VERIFICATION}${token}`;
     const userId = await redis.get(key);
-    if (userId) await redis.del(key); // one-time use
+    if (userId) await redis.del(key);
     return userId;
 };
 
@@ -50,7 +50,7 @@ export const storePasswordReset = async (token, userId, expiresIn = 3600) => {
 export const validatePasswordReset = async (token) => {
     const key = `${PREFIX.PASSWORD_RESET}${token}`;
     const userId = await redis.get(key);
-    if (userId) await redis.del(key); // one-time use
+    if (userId) await redis.del(key);
     return userId;
 };
 

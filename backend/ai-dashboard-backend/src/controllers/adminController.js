@@ -2,14 +2,11 @@ import User from "../models/User.js";
 import Notification from "../models/Notification.js";
 import Session from "../models/Session.js";
 import { createNotification } from "../services/notificationService.js";
-import logger from "../utils/logger.js"; // make sure your logger supports recent logs
+import logger from "../utils/logger.js";
 import os from "os";
 
 class AdminController {
-    // ==========================
-    // 1. USER MANAGEMENT
-    // ==========================
-
+    // 1. USER MANAGEMNT
     async listUsers(req, res) {
         const { page = 1, limit = 20 } = req.query;
         const users = await User.find()
@@ -54,11 +51,7 @@ class AdminController {
             data: { admins, managers, active, suspended },
         });
     }
-
-    // ==========================
     // 2. SYSTEM MONITORING
-    // ==========================
-
     async getSystemStats(req, res) {
         const stats = {
             users: await User.countDocuments(),
@@ -98,11 +91,7 @@ class AdminController {
             res.status(500).json({ success: false, message: "Failed to fetch logs" });
         }
     }
-
-    // ==========================
     // 3. ADMIN DASHBOARD APIs
-    // ==========================
-
     async getOverview(req, res) {
         const [users, sessions, notifications] = await Promise.all([
             User.countDocuments(),

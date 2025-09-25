@@ -1,9 +1,7 @@
 import express from "express";
 import authController from "../controllers/authController.js";
 import requireAuth from "../middleware/Auth/requireAuth.js";
-import { requireRoles, requireAdmin, requireManager } from "../middleware/Auth/roles.js";
-import optionalAuth from "../middleware/Auth/optionalAuth.js";
-import { requireSelfOrAdmin, requireOwnership } from "../middleware/Auth/ownership.js";
+import { requireRoles } from "../middleware/Auth/roles.js";
 
 const router = express.Router();
 
@@ -35,16 +33,16 @@ router.post("/reset-password", authController.resetPassword);
 // Get logged-in user profile
 router.get("/profile", requireAuth, authController.getProfile);
 
-// Update user profile (only if user owns it or admin overrides)
+// Update logged-in user profile (user or admin override)
 router.put("/profile", requireAuth, authController.updateProfile);
 
-// Change password
+// Change password (user only)
 router.post("/change-password", requireAuth, authController.changePassword);
 
 // Get all active sessions (admin only)
 router.get("/sessions", requireAuth, requireRoles("admin"), authController.getSessions);
 
-// Revoke specific session (user can revoke own, admin can revoke anyone)
+// Revoke specific session (user can revoke own, admin can revoke any)
 router.delete("/sessions/:sessionId", requireAuth, authController.revokeSession);
 
 // Logout current device
@@ -55,14 +53,14 @@ router.post("/logout-all", requireAuth, authController.logoutAll);
 
 // ================= UTILITY ROUTES =================
 
-// Auth status check (public)
+// Check auth service status (public)
 router.get("/status", (req, res) => {
     res.json({
         success: true,
         service: "authentication",
         status: "operational",
         timestamp: new Date().toISOString(),
-        version: "1.0.0"
+        version: "1.0.0",
     });
 });
 
@@ -75,9 +73,9 @@ router.get("/health", (req, res) => {
         checks: {
             database: "connected",
             redis: "connected",
-            jwt: "operational"
+            jwt: "operational",
         },
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
     });
 });
 

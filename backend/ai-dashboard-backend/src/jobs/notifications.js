@@ -1,4 +1,3 @@
-// src/jobs/notifications.js
 import Notification from "../models/Notification.js";
 import cron from "node-cron";
 

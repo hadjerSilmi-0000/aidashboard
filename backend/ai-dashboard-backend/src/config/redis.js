@@ -1,4 +1,3 @@
-// src/config/redis.js
 import Redis from "ioredis";
 import logger from "../utils/logger.js";
 

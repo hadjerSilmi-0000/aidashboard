@@ -1,13 +1,6 @@
-// src/services/dataService.js
 import DataPoint from "../models/DataPoint.js";
-import mongoose from "mongoose";
-import socketService from "./socketService.js"; // ✅ NEW import for real-time
+import socketService from "./socketService.js";
 
-/**
- * Validate a single data point object
- * - Checks required fields
- * - Ensures correct types
- */
 export function validateDataPoint(rawObject) {
     if (!rawObject) return { valid: false, errors: ["Empty object"] };
 
@@ -24,12 +17,7 @@ export function validateDataPoint(rawObject) {
     return { valid: errors.length === 0, errors };
 }
 
-/**
- * Build normalized DataPoint from validated row/item
- * - fileId: source file id (ObjectId)
- * - raw: original record
- * - normalized: fields mapped for faster analytics
- */
+
 export function buildDataPoint(fileId, rawObject) {
     const normalized = {
         timestamp: rawObject.timestamp || rawObject.receivedAt || new Date(),
@@ -40,9 +28,8 @@ export function buildDataPoint(fileId, rawObject) {
     return { fileId, raw: rawObject, normalized };
 }
 
-/**
- * Insert a single DataPoint (with validation)
- */
+// Insert a single DataPoint (with validation)
+
 export async function insertDataPoint(fileId, rawObject, userId = null) {
     const { valid, errors } = validateDataPoint(rawObject);
     if (!valid) {
@@ -52,7 +39,7 @@ export async function insertDataPoint(fileId, rawObject, userId = null) {
     const doc = buildDataPoint(fileId, rawObject);
     const saved = await DataPoint.create(doc);
 
-    // 🔥 Broadcast real-time new data event
+    //  Broadcast real-time new data event
     socketService.broadcast("data:new", {
         fileId,
         userId,
@@ -64,17 +51,17 @@ export async function insertDataPoint(fileId, rawObject, userId = null) {
     return { inserted: 1, errors: [] };
 }
 
-/**
- * Insert batch of DataPoints (performant way)
- * - Uses insertMany with ordered: false so one bad doc doesn't stop the batch
- */
+
+// Insert batch of DataPoints (performant way)
+//Uses insertMany with ordered: false so one bad doc doesn't stop the batch
+
 export async function insertDataPointsBatch(docs = [], { fileId, userId } = {}) {
     if (!docs.length) return { inserted: 0, errors: [] };
 
     try {
         const res = await DataPoint.insertMany(docs, { ordered: false });
 
-        // 🔥 Broadcast after bulk insert
+        //  Broadcast after bulk insert
         socketService.broadcast("data:new", {
             fileId,
             userId,
@@ -90,17 +77,14 @@ export async function insertDataPointsBatch(docs = [], { fileId, userId } = {}) 
         };
     }
 }
+// Alias for compatibility with processors
 
-/**
- * Alias for compatibility with processors
- */
 export async function insertDataPoints(docs = [], opts = {}) {
     return insertDataPointsBatch(docs, opts);
 }
 
-/**
- * Fetch DataPoints by fileId with pagination
- */
+// Fetch DataPoints by fileId with pagination
+
 export async function getDataPointsByFile(fileId, { page = 1, limit = 100 } = {}) {
     const skip = (page - 1) * limit;
     const docs = await DataPoint.find({ fileId })
@@ -120,26 +104,23 @@ export async function getDataPointsByFile(fileId, { page = 1, limit = 100 } = {}
     };
 }
 
-/**
- * Setup indexes for performance (run once at startup)
- */
+// Setup indexes for performance (run once at startup)
+
 export async function ensureIndexes() {
     await DataPoint.collection.createIndex({ fileId: 1, "normalized.timestamp": -1 });
     await DataPoint.collection.createIndex({ "normalized.key": 1 });
     await DataPoint.collection.createIndex({ createdAt: -1 });
 }
 
-/**
- * Delete all DataPoints for a file
- */
+//Delete all DataPoints for a file
+
 export async function deleteDataPointsByFile(fileId) {
     const res = await DataPoint.deleteMany({ fileId });
     return { deleted: res.deletedCount };
 }
 
-/**
- * Count DataPoints for a file
- */
+// Count DataPoints for a file
+
 export async function countDataPoints(fileId) {
     return DataPoint.countDocuments({ fileId });
 }

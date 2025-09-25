@@ -2,9 +2,7 @@ import mongoose from "mongoose";
 
 const { Schema } = mongoose;
 
-// ----------------------
 // Main schema
-// ----------------------
 const DataPointSchema = new Schema(
     {
         // Identification
@@ -114,18 +112,14 @@ const DataPointSchema = new Schema(
     }
 );
 
-// ----------------------
 // Indexes
-// ----------------------
 DataPointSchema.index({ fileId: 1, timestamp: -1 });
 DataPointSchema.index({ userId: 1, dataType: 1 });
 DataPointSchema.index({ "processing.status": 1 });
 DataPointSchema.index({ "processing.aiAnalyzed": 1 });
 DataPointSchema.index({ "quality.isValid": 1 });
 
-// ----------------------
 // Virtuals
-// ----------------------
 DataPointSchema.virtual("summary").get(function () {
     const fieldCount = Object.keys(this.data || {}).length;
     const errorCount = this.quality?.validationErrors?.length || 0;
@@ -137,9 +131,7 @@ DataPointSchema.virtual("summary").get(function () {
     };
 });
 
-// ----------------------
 // Instance Methods
-// ----------------------
 DataPointSchema.methods.hasField = function (field) {
     return this.data && Object.prototype.hasOwnProperty.call(this.data, field);
 };
@@ -160,9 +152,7 @@ DataPointSchema.methods.markProcessed = function (status = "completed") {
     this.processing.lastProcessed = new Date();
 };
 
-// ----------------------
 // Statics
-// ----------------------
 DataPointSchema.statics.findByFileId = function (
     fileId,
     page = 1,
@@ -216,9 +206,7 @@ DataPointSchema.statics.getFileAnalytics = function (fileId) {
     ]);
 };
 
-// ----------------------
 // Hooks
-// ----------------------
 DataPointSchema.pre("save", function (next) {
     // Auto-extract timestamp
     if (this.data && !this.extractedTimestamp) {
@@ -249,8 +237,6 @@ DataPointSchema.pre("save", function (next) {
     next();
 });
 
-// ----------------------
 // Export Model
-// ----------------------
 const DataPoint = mongoose.model("DataPoint", DataPointSchema);
 export default DataPoint;

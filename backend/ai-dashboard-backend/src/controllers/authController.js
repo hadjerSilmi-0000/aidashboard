@@ -119,7 +119,7 @@ const refreshToken = async (req, res, next) => {
 // Verify email
 const verifyEmail = async (req, res, next) => {
     try {
-        const token = req.params.token || req.query.token; // <-- support both
+        const token = req.params.token || req.query.token;
         const { email } = await authService.verifyEmailToken(token);
         res.json({ success: true, message: "Email verified", email });
     } catch (err) {

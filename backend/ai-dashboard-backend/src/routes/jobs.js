@@ -1,5 +1,6 @@
 import express from "express";
 import requireAuth from "../middleware/Auth/requireAuth.js";
+import { requireAdmin } from "../middleware/Auth/roles.js";
 import {
     getJobStatusController,
     cancelJobController,
@@ -9,7 +10,7 @@ import { enqueueFileJob } from "../services/jobService.js";
 
 const router = express.Router();
 
-// 🔹 Enqueue a real file job
+// Enqueue a new file job (admin + manager)
 router.post("/enqueue", requireAuth, async (req, res, next) => {
     try {
         const { fileId } = req.body;
@@ -24,13 +25,13 @@ router.post("/enqueue", requireAuth, async (req, res, next) => {
     }
 });
 
-// Get job status by ID
+// Get job status by ID (admin + manager)
 router.get("/:id/status", requireAuth, getJobStatusController);
 
-// Cancel job by ID
-router.delete("/:id", requireAuth, cancelJobController);
+// Cancel job by ID (admin only)
+router.delete("/:id", requireAuth, requireAdmin, cancelJobController);
 
-// Get queue statistics
-router.get("/stats/all", requireAuth, getQueueStatsController);
+// Get queue statistics (admin only)
+router.get("/stats/all", requireAuth, requireAdmin, getQueueStatsController);
 
 export default router;

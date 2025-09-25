@@ -30,7 +30,7 @@ const SessionSchema = new mongoose.Schema(
 //  Auto set expiry and access hash on new session
 SessionSchema.pre("save", function (next) {
     if (!this.expiresAt) {
-        this.expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7d default
+        this.expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     }
     if (this.isNew && this.refreshToken && this.accessTokenHash) {
         this.lastAccessedAt = new Date();

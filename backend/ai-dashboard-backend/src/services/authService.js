@@ -1,18 +1,15 @@
-// src/services/authService.js
 import bcrypt from "bcrypt";
-import crypto from "crypto";
 import { JWTManager } from "../config/jwt.js";
 import { sendEmail } from "../utils/email.js";
 import logger from "../utils/logger.js";
-
-import User from "../models/User.js";
+import User, { USER_STATUS } from "../models/User.js";
 import Session from "../models/Session.js";
 import SecurityLog from "../models/SecurityLog.js";
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 const BCRYPT_ROUNDS = parseInt(process.env.BCRYPT_ROUNDS || "12", 10);
 const MAX_LOGIN_ATTEMPTS = parseInt(process.env.MAX_LOGIN_ATTEMPTS || "5", 10);
-const LOCKOUT_DURATION = parseInt(process.env.LOCKOUT_DURATION || "30", 10); // minutes
+const LOCKOUT_DURATION = parseInt(process.env.LOCKOUT_DURATION || "30", 10);
 
 const authService = {
     // ===== USER CREATION =====
@@ -33,7 +30,7 @@ const authService = {
                 lockUntil: null,
             });
 
-            // 🔑 Secure JWT token for email verification
+            //  Secure JWT token for email verification
             const { token: verificationToken } = JWTManager.generateEmailToken({
                 userId: user._id,
                 email: user.email,
@@ -101,7 +98,7 @@ const authService = {
         if (!user) throw new Error("User not found");
         if (user.emailVerified) throw new Error("Email already verified");
 
-        // 🔑 New JWT each time
+        //  New JWT each time
         const { token } = JWTManager.generateEmailToken({
             userId: user._id,
             email: user.email,

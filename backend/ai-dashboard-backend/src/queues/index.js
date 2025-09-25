@@ -1,7 +1,6 @@
-// src/queues/index.js - No Redis dependencies
 import { EventEmitter } from "events";
 
-console.log("✅ Loading Redis-free queue system...");
+console.log(" Loading Redis-free queue system...");
 
 // Mock connection object
 export const connection = {
@@ -23,7 +22,7 @@ class SimpleQueue extends EventEmitter {
         this.name = name;
         this.jobs = [];
         this.processing = false;
-        console.log(`✅ Simple queue "${name}" created`);
+        console.log(` Simple queue "${name}" created`);
     }
 
     async add(jobName, data, options = {}) {
@@ -41,7 +40,7 @@ class SimpleQueue extends EventEmitter {
         this.jobs.push(job);
         jobStorage.set(job.id, job);
 
-        console.log(`📝 Job ${job.id} (${jobName}) added to queue "${this.name}"`);
+        console.log(` Job ${job.id} (${jobName}) added to queue "${this.name}"`);
         this.emit("job:added", job);
 
         // Process job immediately in next tick
@@ -60,16 +59,16 @@ class SimpleQueue extends EventEmitter {
         waitingJob.status = 'active';
         waitingJob.processedAt = new Date();
 
-        console.log(`⚡ Processing job ${waitingJob.id} in queue "${this.name}"`);
+        console.log(` Processing job ${waitingJob.id} in queue "${this.name}"`);
         this.emit('job:active', waitingJob);
 
         // Simulate processing time
         setTimeout(() => {
-            // ⬇️ keep job in storage instead of discarding
+            //  keep job in storage instead of discarding
             waitingJob.status = 'completed';
             waitingJob.completedAt = new Date();
 
-            console.log(`✅ Job ${waitingJob.id} completed in queue "${this.name}"`);
+            console.log(`Job ${waitingJob.id} completed in queue "${this.name}"`);
             this.emit('job:completed', waitingJob);
 
             // DO NOT remove job from jobStorage, keep for status lookups
@@ -80,12 +79,12 @@ class SimpleQueue extends EventEmitter {
         }, 100);
     }
     async waitUntilReady() {
-        console.log(`✅ Queue "${this.name}" is ready`);
+        console.log(` Queue "${this.name}" is ready`);
         return Promise.resolve();
     }
 
     async close() {
-        console.log(`📪 Queue "${this.name}" closed`);
+        console.log(`Queue "${this.name}" closed`);
         return Promise.resolve();
     }
 
@@ -98,7 +97,7 @@ class SimpleQueue extends EventEmitter {
         return this.jobs.filter((job) => job.status === status);
     }
 
-    // ✅ Added BullMQ-like API methods
+    // Added BullMQ-like API methods
     async getJobCounts() {
         return {
             waiting: this.jobs.filter((j) => j.status === "waiting").length,
@@ -132,19 +131,19 @@ class SimpleWorker extends EventEmitter {
         this.name = name;
         this.processor = processorFn;
         this.isRunning = true;
-        console.log(`✅ Worker "${name}" created`);
+        console.log(` Worker "${name}" created`);
     }
 
     async processJob(job) {
         if (!this.isRunning) return;
 
-        console.log(`👷 Worker "${this.name}" processing job ${job.id}`);
+        console.log(`Worker "${this.name}" processing job ${job.id}`);
         try {
             const result = await this.processor(job);
             this.emit("completed", job, result);
             return result;
         } catch (error) {
-            console.error(`❌ Worker "${this.name}" job ${job.id} failed:`, error.message);
+            console.error(` Worker "${this.name}" job ${job.id} failed:`, error.message);
             this.emit("failed", job, error);
             throw error;
         }
@@ -162,7 +161,7 @@ class SimpleQueueEvents extends EventEmitter {
     constructor(name, options = {}) {
         super();
         this.name = name;
-        console.log(`✅ QueueEvents "${name}" created`);
+        console.log(`QueueEvents "${name}" created`);
 
         const queue = queueStorage.get(name);
         if (queue) {
@@ -176,7 +175,7 @@ class SimpleQueueEvents extends EventEmitter {
     }
 
     async close() {
-        console.log(`📊 QueueEvents "${this.name}" closed`);
+        console.log(`QueueEvents "${this.name}" closed`);
         return Promise.resolve();
     }
 }
@@ -185,14 +184,14 @@ class SimpleQueueEvents extends EventEmitter {
 export function createQueue(name) {
     if (queueStorage.has(name)) return queueStorage.get(name);
 
-    console.log(`📝 Creating queue: ${name}`);
+    console.log(`Creating queue: ${name}`);
     const queue = new SimpleQueue(name);
     queueStorage.set(name, queue);
     return queue;
 }
 
 export function createWorker(name, processorFn) {
-    console.log(`👷 Creating worker: ${name}`);
+    console.log(`Creating worker: ${name}`);
     const worker = new SimpleWorker(name, processorFn);
 
     const queue = queueStorage.get(name);
@@ -217,14 +216,14 @@ export function createWorker(name, processorFn) {
 }
 
 export function createQueueEvents(name) {
-    console.log(`📊 Creating queue events: ${name}`);
+    console.log(` Creating queue events: ${name}`);
     const events = new SimpleQueueEvents(name);
 
-    events.on("waiting", ({ jobId }) => console.log(`⏳ Job ${jobId} in ${name} is waiting`));
-    events.on("active", ({ jobId }) => console.log(`⚡ Job ${jobId} in ${name} is now active`));
-    events.on("completed", ({ jobId }) => console.log(`✅ Job ${jobId} in ${name} completed`));
+    events.on("waiting", ({ jobId }) => console.log(`Job ${jobId} in ${name} is waiting`));
+    events.on("active", ({ jobId }) => console.log(`Job ${jobId} in ${name} is now active`));
+    events.on("completed", ({ jobId }) => console.log(`Job ${jobId} in ${name} completed`));
     events.on("failed", ({ jobId, failedReason }) =>
-        console.error(`❌ Job ${jobId} failed: ${failedReason}`)
+        console.error(` Job ${jobId} failed: ${failedReason}`)
     );
 
     return events;
@@ -241,4 +240,4 @@ export function getAllQueues() {
     return Array.from(queueStorage.keys());
 }
 
-console.log("✅ Redis-free queue system loaded successfully");
+console.log(" Redis-free queue system loaded successfully");

@@ -1,11 +1,10 @@
-// src/utils/email.js
 import nodemailer from "nodemailer";
 import logger from "./logger.js";
 
 let transporter;
 
 if (process.env.NODE_ENV === "development") {
-    // 🔹 Use Ethereal in dev
+    // Use Ethereal in dev
     const testAccount = await nodemailer.createTestAccount();
     transporter = nodemailer.createTransport({
         host: "smtp.ethereal.email",
@@ -17,11 +16,11 @@ if (process.env.NODE_ENV === "development") {
     });
     logger.info(`Ethereal test account created: ${testAccount.user}`);
 } else {
-    // 🔹 Use real SMTP in prod
+    // Use real SMTP in prod
     transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
         port: parseInt(process.env.SMTP_PORT || "587", 10),
-        secure: process.env.SMTP_SECURE === "true", // true for 465
+        secure: process.env.SMTP_SECURE === "true",
         auth: {
             user: process.env.SMTP_USER,
             pass: process.env.SMTP_PASS,

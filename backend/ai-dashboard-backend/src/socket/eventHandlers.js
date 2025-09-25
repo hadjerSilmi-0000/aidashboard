@@ -1,5 +1,5 @@
 export function registerEventHandlers(socket) {
-    // 🌍 Global dashboard subscription
+    //  Global dashboard subscription
     socket.on("subscribe:dashboard", () => {
         console.log(`📡 User ${socket.id} subscribed to dashboard`);
         socket.join("dashboard");
@@ -10,14 +10,14 @@ export function registerEventHandlers(socket) {
         socket.leave("dashboard");
     });
 
-    // 📂 File-specific analytics subscription
+    //  File-specific analytics subscription
     socket.on("subscribe:file", ({ fileId }) => {
-        console.log(`📡 User ${socket.id} subscribed to file:${fileId}`);
+        console.log(`User ${socket.id} subscribed to file:${fileId}`);
         socket.join(`file:${fileId}`);
     });
 
     socket.on("unsubscribe:file", ({ fileId }) => {
-        console.log(`📴 User ${socket.id} unsubscribed from file:${fileId}`);
+        console.log(`User ${socket.id} unsubscribed from file:${fileId}`);
         socket.leave(`file:${fileId}`);
     });
 
@@ -27,6 +27,6 @@ export function registerEventHandlers(socket) {
     });
 
     socket.on("disconnect", (reason) => {
-        console.log(`❌ Client disconnected: ${socket.id}, reason: ${reason}`);
+        console.log(`Client disconnected: ${socket.id}, reason: ${reason}`);
     });
 }
