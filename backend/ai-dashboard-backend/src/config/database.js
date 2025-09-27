@@ -63,13 +63,19 @@ class DatabaseManager {
         return uri;
     }
 
-    // Recommended Mongoose options
+    // Recommended Mongoose options (updated for latest version)
     getConnectionOptions() {
+        // Set global Mongoose options to suppress warnings
+        mongoose.set('strictQuery', false);
+
         return {
             maxPoolSize: 10,
             serverSelectionTimeoutMS: 5000,
             socketTimeoutMS: 45000,
             autoIndex: process.env.NODE_ENV !== "production",
+            // Explicitly set these to avoid deprecated warnings
+            bufferCommands: false,
+            bufferMaxEntries: 0
         };
     }
 

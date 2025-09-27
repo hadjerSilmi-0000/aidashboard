@@ -4,10 +4,9 @@ import logger from "./src/utils/logger.js";
 import { initSocket } from "./src/socket/socketHandler.js";
 
 const PORT = process.env.PORT || 5000;
-
 let server;
 
-// Graceful shutdown
+// Graceful shutdown handler
 const gracefulShutdown = () => {
     logger.info("Received shutdown signal, closing server gracefully...");
 
@@ -28,13 +27,12 @@ const gracefulShutdown = () => {
     }
 };
 
-// Start server
+// Start server with DB and socket
 const startServer = async () => {
     try {
         await configManager.initialize();
         logger.info("Configuration initialized successfully");
 
-        // Use http.Server wrapper
         server = app.listen(PORT, () => {
             logger.info(`Server running on http://localhost:${PORT}`);
             logger.info(`Environment: ${process.env.NODE_ENV || "development"}`);
@@ -43,7 +41,6 @@ const startServer = async () => {
             );
         });
 
-        // Initialize socket.io with the HTTP server
         initSocket(server);
 
         process.on("SIGTERM", gracefulShutdown);

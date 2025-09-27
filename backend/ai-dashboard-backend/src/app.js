@@ -8,13 +8,14 @@ import { setupSwagger } from "./config/swagger.js";
 import logger from "./utils/logger.js";
 import analyticsRoutes from "./routes/analytics.js";
 
-// Routes
+// Route modules
 import authRoutes from "./routes/auth.js";
 import fileRoutes from "./routes/files.js";
 import jobRoutes from "./routes/jobs.js";
 import aiJobRoutes from "./routes/aijob.js";
 import notificationRoutes from "./routes/notifications.js";
 import adminRoutes from "./routes/admin.js";
+import configManager from "./config/index.js";
 
 const app = express();
 
@@ -103,7 +104,6 @@ app.get("/", (req, res) => {
 });
 
 // Health check route
-import configManager from "./config/index.js";
 app.get("/health", async (req, res) => {
     try {
         const health = await configManager.healthCheck();
@@ -153,6 +153,7 @@ app.use("/api/analytics", analyticsRoutes);
 app.use("/api/ai/jobs", aiJobRoutes);
 app.use("/api/notification", notificationRoutes);
 app.use("/api/admin", adminRoutes);
+
 // ================= ERROR HANDLING =================
 
 // Error handler
@@ -173,7 +174,6 @@ app.use((err, req, res, next) => {
 });
 
 // Not found handler
-// Not found handler (must take req, res)
 app.use((req, res) => {
     res.status(404).json({
         success: false,
@@ -191,6 +191,7 @@ app.use((req, res) => {
     });
 });
 
-
+// Swagger setup
 setupSwagger(app);
+
 export default app;
