@@ -15,9 +15,6 @@
   },
   "jest": {
     "testEnvironment": "node",
-    "setupFilesAfterEnv": [
-      "<rootDir>/tests/setupTestDB.js"
-    ],
     "transform": {}
   },
   "keywords": [],
