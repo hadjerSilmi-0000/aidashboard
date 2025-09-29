@@ -1,4 +1,7 @@
-import "dotenv/config";
+// Only load .env file if not in test environment
+if (process.env.NODE_ENV !== 'test') {
+    await import('dotenv/config');
+}
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -18,10 +21,7 @@ import adminRoutes from "./routes/admin.js";
 import configManager from "./config/index.js";
 
 const app = express();
-// Only load .env file if not in test environment
-if (process.env.NODE_ENV !== 'test') {
-    await import('dotenv/config');
-}
+
 // ================= SECURITY MIDDLEWARE =================
 
 // Enable CORS
