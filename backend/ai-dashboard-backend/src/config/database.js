@@ -8,10 +8,17 @@ class DatabaseManager {
         this.maxRetries = 5; // maximum connection retries
         this.retryDelay = 5000; // base delay in ms
         this.connectionState = "disconnected";
+        this.isReconnecting = false; // Prevent multiple reconnection attempts
     }
 
     // Main connect method with retry and graceful shutdown
     async connect() {
+        // Skip connection in test environment
+        if (process.env.NODE_ENV === 'test') {
+            logger.info("Skipping MongoDB connection in test environment");
+            return true;
+        }
+
         try {
             const uri = this.buildConnectionString();
             const options = this.getConnectionOptions();
@@ -72,10 +79,7 @@ class DatabaseManager {
             maxPoolSize: 10,
             serverSelectionTimeoutMS: 5000,
             socketTimeoutMS: 45000,
-            autoIndex: process.env.NODE_ENV !== "production",
-            // Explicitly set these to avoid deprecated warnings
-            bufferCommands: false,
-            bufferMaxEntries: 0
+            autoIndex: process.env.NODE_ENV !== "production"
         };
     }
 
@@ -112,6 +116,7 @@ class DatabaseManager {
             logger.info("MongoDB connection established");
             this.isConnected = true;
             this.connectionState = "connected";
+            this.isReconnecting = false;
         });
 
         mongoose.connection.on("error", (error) => {
@@ -123,20 +128,26 @@ class DatabaseManager {
             logger.warn("MongoDB disconnected");
             this.isConnected = false;
             this.connectionState = "disconnected";
-            this.attemptReconnection();
+
+            // Only attempt reconnection if not in test mode and not already reconnecting
+            if (process.env.NODE_ENV !== 'test' && !this.isReconnecting) {
+                this.attemptReconnection();
+            }
         });
 
         mongoose.connection.on("reconnected", () => {
             logger.info("MongoDB reconnected");
             this.isConnected = true;
             this.connectionState = "connected";
+            this.isReconnecting = false;
         });
     }
 
     // Try to reconnect if the connection drops
     async attemptReconnection() {
-        if (this.connectionState === "connecting") return;
+        if (this.isReconnecting || process.env.NODE_ENV === 'test') return;
 
+        this.isReconnecting = true;
         logger.info("Reconnecting to MongoDB...");
         this.connectionState = "connecting";
         this.retryCount = 0;
@@ -145,6 +156,7 @@ class DatabaseManager {
             await this.connectWithRetry(this.buildConnectionString(), this.getConnectionOptions());
         } catch (error) {
             logger.error(`Reconnection failed: ${error.message}`);
+            this.isReconnecting = false;
         }
     }
 
