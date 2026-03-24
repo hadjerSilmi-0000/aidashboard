@@ -1,0 +1,36 @@
+export const HTTP_STATUS = {
+    OK: 200,
+    CREATED: 201,
+    NO_CONTENT: 204,
+    BAD_REQUEST: 400,
+    UNAUTHORIZED: 401,
+    FORBIDDEN: 403,
+    NOT_FOUND: 404,
+    CONFLICT: 409,
+    UNPROCESSABLE_ENTITY: 422,
+    TOO_MANY_REQUESTS: 429,
+    INTERNAL_SERVER_ERROR: 500,
+    BAD_GATEWAY: 502,
+    SERVICE_UNAVAILABLE: 503,
+};
+
+export const FILE_SIZE_LIMITS = {
+    MAX_UPLOAD_MB: 20,
+    MAX_UPLOAD_BYTES: 20 * 1024 * 1024,
+};
+
+export const PAGINATION = {
+    DEFAULT_PAGE: 1,
+    DEFAULT_LIMIT: 20,
+    MAX_LIMIT: 100,
+};
+
+export const JOB_STATUS = {
+    WAITING: "waiting",
+    ACTIVE: "active",
+    COMPLETED: "completed",
+    FAILED: "failed",
+    CANCELLED: "cancelled",
+};
+
+export const NOTIFICATION_RETENTION_DAYS = 30;

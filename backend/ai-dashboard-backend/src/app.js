@@ -1,7 +1,8 @@
-if (process.env.NODE_ENV !== 'test') {
-    const dotenv = await import('dotenv');
-    dotenv.config();
-}
+// ================= LOAD ENV FIRST =================
+import dotenv from "dotenv";
+dotenv.config();
+
+console.log("ENV CHECK:", process.env.SMTP_HOST, process.env.SMTP_USER);
 
 import express from "express";
 import cors from "cors";
@@ -11,6 +12,7 @@ import cookieParser from "cookie-parser";
 import { setupSwagger } from "./config/swagger.js";
 import logger from "./utils/logger.js";
 import analyticsRoutes from "./routes/analytics.js";
+import { initEmail } from "./utils/email.js";
 
 // Route modules
 import authRoutes from "./routes/auth.js";
@@ -20,20 +22,19 @@ import aiJobRoutes from "./routes/aijob.js";
 import notificationRoutes from "./routes/notifications.js";
 import adminRoutes from "./routes/admin.js";
 import configManager from "./config/index.js";
+import healthRoutes from "./routes/health.js";
 
 const app = express();
-// ================= SECURITY MIDDLEWARE =================
 
-// Enable CORS
+// ================= SECURITY MIDDLEWARE =================
 app.use(
     cors({
-        origin: process.env.FRONTEND_URL || "http://localhost:3000",
+        origin: process.env.FRONTEND_URL || "http://localhost:5173",
         credentials: true,
         optionsSuccessStatus: 200,
     })
 );
 
-// Security headers
 app.use(
     helmet({
         contentSecurityPolicy: {
@@ -47,7 +48,6 @@ app.use(
     })
 );
 
-// Global rate limit
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 100,
@@ -60,7 +60,6 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// Stricter rate limit for auth routes
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 20,
@@ -71,12 +70,10 @@ const authLimiter = rateLimit({
 });
 
 // ================= GLOBAL MIDDLEWARE =================
-
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
 
-// Request logger
 app.use((req, res, next) => {
     const start = Date.now();
     res.on("finish", () => {
@@ -89,8 +86,6 @@ app.use((req, res, next) => {
 });
 
 // ================= ROUTES =================
-
-// Root route
 app.get("/", (req, res) => {
     res.json({
         success: true,
@@ -106,7 +101,6 @@ app.get("/", (req, res) => {
     });
 });
 
-// Health check route
 app.get("/health", async (req, res) => {
     try {
         const health = await configManager.healthCheck();
@@ -125,7 +119,6 @@ app.get("/health", async (req, res) => {
     }
 });
 
-// API overview
 app.get("/api", (req, res) => {
     res.json({
         success: true,
@@ -148,7 +141,6 @@ app.get("/api", (req, res) => {
     });
 });
 
-// Mount routes
 app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/files", fileRoutes);
 app.use("/api/jobs", jobRoutes);
@@ -156,10 +148,9 @@ app.use("/api/analytics", analyticsRoutes);
 app.use("/api/ai/jobs", aiJobRoutes);
 app.use("/api/notification", notificationRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api", healthRoutes);
 
 // ================= ERROR HANDLING =================
-
-// Error handler
 app.use((err, req, res, next) => {
     logger.error(`Error: ${err.message}`, {
         stack: err.stack,
@@ -176,25 +167,35 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Not found handler
 app.use((req, res) => {
     res.status(404).json({
         success: false,
         error: "Not Found",
         message: `Endpoint ${req.method} ${req.originalUrl} not found`,
-        availableRoutes: {
-            auth: "/api/auth/*",
-            files: "/api/files/*",
-            jobs: "/api/jobs/*",
-            notification: "/api/notification/*",
-            admin: "/api/admin/*",
-            health: "/health",
-            root: "/",
-        },
     });
 });
 
-// Swagger setup
 setupSwagger(app);
+
+// ================= START SERVER =================
+const PORT = process.env.PORT || 5001;
+
+const startServer = async () => {
+    try {
+        await initEmail();
+        logger.info("Email service initialized");
+
+        app.listen(PORT, () => {
+            logger.info(`Server running on port ${PORT}`);
+            logger.info(`Environment: ${process.env.NODE_ENV}`);
+            logger.info(`Frontend URL: ${process.env.FRONTEND_URL}`);
+        });
+    } catch (error) {
+        logger.error("Failed to start server:", error);
+        process.exit(1);
+    }
+};
+
+startServer();
 
 export default app;

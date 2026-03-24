@@ -16,6 +16,7 @@ export const USER_STATUS = {
 
 const userSchema = new mongoose.Schema(
     {
+        // ── Identity ────────────────────────────────────────────────────────
         email: {
             type: String,
             required: true,
@@ -40,6 +41,8 @@ const userSchema = new mongoose.Schema(
         firstName: { type: String, required: true, trim: true },
         lastName: { type: String, required: true, trim: true },
         password: { type: String, required: true, select: false },
+
+        // ── Role & Status ───────────────────────────────────────────────────
         role: {
             type: String,
             enum: Object.values(USER_ROLES),
@@ -49,51 +52,67 @@ const userSchema = new mongoose.Schema(
             type: String,
             enum: Object.values(USER_STATUS),
             default: USER_STATUS.PENDING,
+            index: true,
         },
+
+        // ── Email Verification ──────────────────────────────────────────────
+        // ✅ FIXED: was buried inside notificationPreferences — authService
+        //    accesses these at root level (user.emailVerified, user.status etc.)
+        emailVerified: { type: Boolean, default: false },
+
+        // ── Security / Login tracking ───────────────────────────────────────
+        loginAttempts: { type: Number, default: 0 },
+        lockUntil: { type: Date, default: null },
+        lastLogin: { type: Date },
+        lastLoginIP: { type: String },
+
+        // ── Password Reset ──────────────────────────────────────────────────
+        passwordResetToken: { type: String, select: false },
+        passwordResetExpires: { type: Date, select: false },
+
+        // ── Profile ─────────────────────────────────────────────────────────
+        profile: {
+            avatar: {
+                type: String,
+                validate: { validator: (v) => !v || validator.isURL(v), message: "Invalid URL" },
+            },
+            bio: { type: String, maxlength: 500 },
+        },
+
+        // ── Notification Preferences ─────────────────────────────────────────
         notificationPreferences: {
             mutedTypes: [{ type: String }],
             deliveryChannels: {
                 inApp: { type: Boolean, default: true },
                 email: { type: Boolean, default: false },
-                sms: { type: Boolean, default: false }
-            },
-            emailVerified: { type: Boolean, default: false },
-            emailVerificationToken: { type: String, select: false },
-            emailVerificationExpires: { type: Date, select: false },
-
-            // Security
-            loginAttempts: { type: Number, default: 0 },
-            lockUntil: { type: Date },
-            lastLogin: { type: Date },
-            lastLoginIP: { type: String },
-
-            // Profile
-            profile: {
-                avatar: { type: String, validate: (v) => !v || validator.isURL(v) },
-                bio: { type: String, maxlength: 500 },
+                sms: { type: Boolean, default: false },
             },
         },
     },
     { timestamps: true }
-
 );
 
-// Virtuals
+// ─── Virtuals ─────────────────────────────────────────────────────────────
+
 userSchema.virtual("fullName").get(function () {
     return `${this.firstName} ${this.lastName}`;
 });
+
+// ✅ isLocked now reads from root-level lockUntil
 userSchema.virtual("isLocked").get(function () {
     return this.lockUntil && this.lockUntil > Date.now();
 });
 
-// Middleware
+// ─── Middleware ────────────────────────────────────────────────────────────
+
 userSchema.pre("save", async function (next) {
     if (!this.isModified("password")) return next();
     this.password = await bcrypt.hash(this.password, 12);
     next();
 });
 
-// Methods
+// ─── Instance methods ──────────────────────────────────────────────────────
+
 userSchema.methods.comparePassword = function (candidatePassword) {
     return bcrypt.compare(candidatePassword, this.password);
 };

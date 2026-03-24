@@ -2,6 +2,7 @@ import { Server } from "socket.io";
 import { registerEventHandlers } from "./eventHandlers.js";
 import socketService from "../services/socketService.js";
 import { JWTManager } from "../config/jwt.js";
+
 let io;
 
 export function initSocket(server) {
@@ -15,49 +16,58 @@ export function initSocket(server) {
     // Attach io to socketService for global use
     socketService.setIO(io);
 
-    io.on("connection", (socket) => {
-        console.log(`Client connected: ${socket.id}`);
-
+    // Auth middleware for every socket connection
+    io.use(async (socket, next) => {
         try {
-            // Expect JWT token in handshake auth
-            const token = socket.handshake.auth?.token;
+            const token =
+                socket.handshake.auth?.token ||
+                socket.handshake.headers?.authorization?.replace("Bearer ", "");
+
             if (!token) {
-                console.warn("No token provided, disconnecting...");
-                socket.disconnect();
-                return;
+                return next(new Error("Authentication error: no token provided"));
             }
 
-            const user = JWTManager(token);
+            // ✅ FIXED: was JWTManager(token) — must be verifyAccessToken
+            const { valid, decoded, error } = JWTManager.verifyAccessToken(token);
 
-            if (!user?._id) {
-                console.warn(" Invalid user, disconnecting...");
-                socket.disconnect();
-                return;
+            if (!valid) {
+                return next(new Error(`Authentication error: ${error}`));
             }
 
-            // Join dashboard room (keeps backward compatibility)
-            socket.join("dashboard");
-
-            // Join user-specific room
-            socket.join(user._id.toString());
-
-            // Join role-based room
-            if (user.role) {
-                socket.join(`role:${user.role}`);
-            }
-
-            console.log(` User ${user._id} joined rooms: dashboard, ${user._id}, role:${user.role}`);
-
-            // Register any custom event handlers
-            registerEventHandlers(socket);
-
-            socket.on("disconnect", () => {
-                console.log(`User ${user._id} disconnected (${socket.id})`);
-            });
+            socket.data.user = decoded;
+            return next();
         } catch (err) {
-            console.error(" Socket auth error:", err.message);
-            socket.disconnect();
+            return next(new Error(`Socket auth failed: ${err.message}`));
         }
+    });
+
+    io.on("connection", (socket) => {
+        const user = socket.data.user;
+        console.log(`Client connected: ${socket.id} — userId: ${user?.userId}`);
+
+        // Join dashboard room (backward compat)
+        socket.join("dashboard");
+
+        // Join user-specific room for targeted events
+        if (user?.userId) {
+            socket.join(user.userId.toString());
+        }
+
+        // Join role-based room for broadcast by role
+        if (user?.role) {
+            socket.join(`role:${user.role}`);
+        }
+
+        console.log(
+            `User ${user?.userId} joined rooms: dashboard, ${user?.userId}, role:${user?.role}`
+        );
+
+        // Register custom event handlers (subscribe/unsubscribe etc.)
+        registerEventHandlers(socket);
+
+        socket.on("disconnect", (reason) => {
+            console.log(`User ${user?.userId} disconnected (${socket.id}) — ${reason}`);
+        });
     });
 }
 

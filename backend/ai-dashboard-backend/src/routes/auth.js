@@ -2,10 +2,18 @@ import express from "express";
 import authController from "../controllers/authController.js";
 import requireAuth from "../middleware/Auth/requireAuth.js";
 import { requireRoles } from "../middleware/Auth/roles.js";
+import { getCurrentUser } from "../controllers/authController.js";
 
 const router = express.Router();
 
 // ================= PUBLIC ROUTES =================
+
+router.get("/me", requireAuth, (req, res) => {
+    return res.json({
+        success: true,
+        user: req.user, // filled by requireAuth after verifying JWT
+    });
+});
 
 // Register new user
 router.post("/register", authController.register);
@@ -17,7 +25,7 @@ router.post("/login", authController.login);
 router.post("/refresh-token", authController.refreshToken);
 
 // Verify email
-router.get("/verify-email/:token", authController.verifyEmail);
+router.get("/verify-email", authController.verifyEmail);
 
 // Resend email verification
 router.post("/resend-verification", authController.resendVerification);

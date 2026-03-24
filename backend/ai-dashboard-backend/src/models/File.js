@@ -6,6 +6,9 @@ export const FILE_TYPES = {
     CSV: "csv",
     JSON: "json",
     PDF: "pdf",
+    IMAGE: "image",
+    TEXT: "text",
+    EXCEL: "excel",
     OTHER: "other",
 };
 
@@ -22,10 +25,12 @@ const ProcessingStageSchema = new Schema(
         stage: { type: String, required: true },
         status: {
             type: String,
-            enum: ["pending", "in-progress", "completed", "failed"],
+            enum: ["pending", "in_progress", "in-progress", "completed", "failed"],
             default: "pending",
         },
         progress: { type: Number, default: 0 },
+        startedAt: { type: Date },
+        completedAt: { type: Date },
         error: {
             message: String,
             code: String,
@@ -48,7 +53,7 @@ const FileSchema = new Schema(
     {
         filename: { type: String, required: true },
         originalName: { type: String, required: true },
-        fileType: { type: String }, // pdf, csv, json, etc.
+        fileType: { type: String, enum: Object.values(FILE_TYPES) },
         mimeType: { type: String },
         size: { type: Number },
         path: { type: String },
@@ -57,17 +62,24 @@ const FileSchema = new Schema(
             type: String,
             enum: Object.values(FILE_STATUS),
             default: FILE_STATUS.UPLOADED,
+            index: true,
         },
 
         processingStages: { type: [ProcessingStageSchema], default: [] },
         errors: { type: [ErrorSchema], default: [] },
 
-        uploadedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+        uploadedBy: {
+            type: Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
+            index: true,
+        },
     },
     { timestamps: true }
 );
 
-//Helper methods
+// ─── Instance methods ──────────────────────────────────────────────────────
+
 FileSchema.methods.addError = async function (stage, message, code, meta = {}) {
     this.errors.push({ stage, message, code, meta });
     this.status = FILE_STATUS.FAILED;
@@ -81,10 +93,7 @@ FileSchema.methods.addError = async function (stage, message, code, meta = {}) {
     return this.save();
 };
 
-FileSchema.methods.updateProcessingStage = async function (
-    stage,
-    update = {}
-) {
+FileSchema.methods.updateProcessingStage = async function (stage, update = {}) {
     const stageEntry = this.processingStages.find((s) => s.stage === stage);
     if (stageEntry) {
         Object.assign(stageEntry, update);
@@ -95,10 +104,7 @@ FileSchema.methods.updateProcessingStage = async function (
 };
 
 FileSchema.methods.markStageCompleted = async function (stage) {
-    return this.updateProcessingStage(stage, {
-        status: "completed",
-        progress: 100,
-    });
+    return this.updateProcessingStage(stage, { status: "completed", progress: 100 });
 };
 
 FileSchema.methods.markQueued = async function () {
@@ -116,6 +122,25 @@ FileSchema.methods.markCompleted = async function () {
     return this.save();
 };
 
-const File = mongoose.model("File", FileSchema);
+// ─── Static methods ────────────────────────────────────────────────────────
 
+/**
+ * ✅ ADDED: was missing — called by fileController.js listFiles()
+ * Returns all files uploaded by a specific user, newest first.
+ */
+FileSchema.statics.findByUser = function (userId, { limit = 50, skip = 0 } = {}) {
+    return this.find({ uploadedBy: userId })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+};
+
+/**
+ * Returns files by status for a given user.
+ */
+FileSchema.statics.findByUserAndStatus = function (userId, status) {
+    return this.find({ uploadedBy: userId, status }).sort({ createdAt: -1 });
+};
+
+const File = mongoose.model("File", FileSchema);
 export default File;

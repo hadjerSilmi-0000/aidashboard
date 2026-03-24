@@ -6,7 +6,7 @@ import User, { USER_STATUS } from "../models/User.js";
 import Session from "../models/Session.js";
 import SecurityLog from "../models/SecurityLog.js";
 
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 const BCRYPT_ROUNDS = parseInt(process.env.BCRYPT_ROUNDS || "12", 10);
 const MAX_LOGIN_ATTEMPTS = parseInt(process.env.MAX_LOGIN_ATTEMPTS || "5", 10);
 const LOCKOUT_DURATION = parseInt(process.env.LOCKOUT_DURATION || "30", 10);
@@ -58,16 +58,16 @@ const authService = {
 
     // ===== EMAIL VERIFICATION =====
     async sendVerificationEmail(email, firstName, token) {
-        const verifyLink = `${FRONTEND_URL}/verify-email?token=${token}`;
+        const verifyLink = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
         await sendEmail({
             to: email,
             subject: "Verify your account",
             html: `
-              <p>Hi ${firstName},</p>
-              <p>Click below to verify your email:</p>
-              <a href="${verifyLink}" target="_blank">${verifyLink}</a>
-              <p>This link will expire in 24 hours.</p>
-            `,
+      <p>Hi ${firstName},</p>
+      <p>Click below to verify your email:</p>
+      <a href="${verifyLink}" target="_blank">${verifyLink}</a>
+      <p>This link will expire in 24 hours.</p>
+    `,
         });
     },
 
@@ -235,7 +235,8 @@ const authService = {
     },
 
     async sendPasswordResetEmail(email, firstName, token) {
-        const resetLink = `${FRONTEND_URL}/reset-password?token=${token}`;
+        const resetLink = `${FRONTEND_URL}/reset-password/${token}`;
+
         await sendEmail({
             to: email,
             subject: "Password Reset",
@@ -246,11 +247,20 @@ const authService = {
             `,
         });
     },
-
     async validatePasswordResetToken(token) {
-        const { valid, decoded, error } = await JWTManager.verifyPasswordResetToken(token);
+        const { valid, decoded } = JWTManager.verifyPasswordResetToken(token);
         if (!valid) throw new Error("Invalid or expired reset token");
-        return { userId: decoded.userId };
+
+        // Get user from DB
+        const user = await User.findById(decoded.userId).select("+passwordResetExpires");
+        if (!user) throw new Error("User not found");
+
+        // Check if token expired
+        if (!user.passwordResetExpires || user.passwordResetExpires < new Date()) {
+            throw new Error("Reset token has expired");
+        }
+
+        return { userId: user._id };
     },
 
     async updatePassword(userId, newPassword) {

@@ -2,6 +2,52 @@ import authService from "../services/authService.js";
 import Session from "../models/Session.js";
 import User from "../models/User.js";
 import { JWTManager } from "../config/jwt.js";
+import jwt from "jsonwebtoken";
+import db from "../config/database.js";
+
+
+export const getCurrentUser = async (req, res) => {
+    try {
+        // Extract token from cookie
+        const token = req.cookies?.access_token;
+
+        if (!token) {
+            return res.status(401).json({
+                success: false,
+                message: "No token provided"
+            });
+        }
+
+        // Verify JWT
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        // Fetch user from MongoDB
+        const user = await User.findById(decoded.id).select('name email role');
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        res.json({
+            success: true,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role
+            }
+        });
+    } catch (error) {
+        console.error("Error in /me:", error);
+        res.status(401).json({
+            success: false,
+            message: "Invalid or expired token"
+        });
+    }
+};
 
 // ================= PUBLIC CONTROLLERS =================
 
