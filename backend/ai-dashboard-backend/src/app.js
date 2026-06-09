@@ -23,6 +23,8 @@ import notificationRoutes from "./routes/notifications.js";
 import adminRoutes from "./routes/admin.js";
 import configManager from "./config/index.js";
 import healthRoutes from "./routes/health.js";
+import { initSocket } from "./socket/socketHandler.js";
+
 
 const app = express();
 
@@ -182,13 +184,19 @@ const PORT = process.env.PORT || 5001;
 
 const startServer = async () => {
     try {
+        await configManager.initialize();   // ← already there
         await initEmail();
-        logger.info("Email service initialized");
 
-        app.listen(PORT, () => {
-            logger.info(`Server running on port ${PORT}`);
-            logger.info(`Environment: ${process.env.NODE_ENV}`);
-            logger.info(`Frontend URL: ${process.env.FRONTEND_URL}`);
+        // Change app.listen to use http.createServer so Socket.IO can attach
+        import("http").then(({ createServer }) => {
+            const server = createServer(app);
+            initSocket(server);               // ← add this
+
+            server.listen(PORT, () => {
+                logger.info(`Server running on port ${PORT}`);
+                logger.info(`Environment: ${process.env.NODE_ENV}`);
+                logger.info(`Frontend URL: ${process.env.FRONTEND_URL}`);
+            });
         });
     } catch (error) {
         logger.error("Failed to start server:", error);

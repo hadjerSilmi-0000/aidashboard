@@ -5,12 +5,14 @@ import { StatCard } from "@/components/ui/stat-card";
 import { StatusBadge } from "@/components/ui/badge";
 import { SkeletonCard } from "@/components/ui/spinner";
 import { filesApi, jobsApi, healthApi } from "@/lib/api";
-import { cachedFetch } from "@/lib/cache";
+import { cachedFetch, cacheInvalidate } from "@/lib/cache";
 import { useAuth } from "@/lib/auth-context";
+import { useSocketEvent } from "@/lib/socket-context";
 import { motion } from "framer-motion";
 import { Files, BrainCircuit, CheckCircle, Activity, Zap } from "lucide-react";
 import { timeAgo, formatDate } from "@/lib/utils";
 import Link from "next/link";
+import toast from "react-hot-toast";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -22,9 +24,9 @@ export default function DashboardPage() {
   useEffect(() => {
     let mounted = true;
     Promise.allSettled([
-      cachedFetch("dashboard:files",    () => filesApi.list().then(r => r.data.files || []),    3 * 60_000),
-      cachedFetch("dashboard:jobstats", () => jobsApi.getStats().then(r => r.data.stats),       3 * 60_000),
-      cachedFetch("dashboard:health",   () => healthApi.check().then(r => r.data),              5 * 60_000),
+      cachedFetch("dashboard:files", () => filesApi.list().then(r => r.data.files || []), 3 * 60_000),
+      cachedFetch("dashboard:jobstats", () => jobsApi.getStats().then(r => r.data.stats), 3 * 60_000),
+      cachedFetch("dashboard:health", () => healthApi.check().then(r => r.data), 5 * 60_000),
     ]).then(([f, j, h]) => {
       if (!mounted) return;
       if (f.status === "fulfilled") setFiles(f.value as any[]);
@@ -34,11 +36,42 @@ export default function DashboardPage() {
     return () => { mounted = false; };
   }, []);
 
+  // ── Socket: update file status in real-time ──────────────────────────
+  useSocketEvent<{ fileId: string }>("file:completed", (data) => {
+    setFiles(prev =>
+      prev.map(f => f._id === data.fileId ? { ...f, status: "completed" } : f)
+    );
+    setJobStats((prev: any) =>
+      prev ? { ...prev, completed: (prev.completed ?? 0) + 1, active: Math.max(0, (prev.active ?? 1) - 1) } : prev
+    );
+    cacheInvalidate("dashboard:");
+  });
+
+  useSocketEvent<{ fileId: string }>("file:failed", (data) => {
+    setFiles(prev =>
+      prev.map(f => f._id === data.fileId ? { ...f, status: "failed" } : f)
+    );
+    setJobStats((prev: any) =>
+      prev ? { ...prev, failed: (prev.failed ?? 0) + 1, active: Math.max(0, (prev.active ?? 1) - 1) } : prev
+    );
+    cacheInvalidate("dashboard:");
+  });
+
+  useSocketEvent<{ fileId: string }>("file:started", (data) => {
+    setFiles(prev =>
+      prev.map(f => f._id === data.fileId ? { ...f, status: "processing" } : f)
+    );
+  });
+
+  useSocketEvent<any>("notification:new", (data) => {
+    toast.success(`📬 ${data.title || "New notification"}`, { duration: 4000 });
+  });
+  // ─────────────────────────────────────────────────────────────────────
+
   const completed = files.filter(f => f.status === "completed").length;
 
   return (
     <Shell>
-      {/* Greeting */}
       <div style={{ marginBottom: 24 }}>
         <h2 style={{ fontSize: 22, fontWeight: 700, color: "#1e1b4b" }}>
           Hello, {user?.firstName} 👋
@@ -51,14 +84,16 @@ export default function DashboardPage() {
       {/* Stats */}
       {loading ? (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, marginBottom: 24 }}>
-          {[0,1,2,3].map(i => <SkeletonCard key={i} />)}
+          {[0, 1, 2, 3].map(i => <SkeletonCard key={i} />)}
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, marginBottom: 24 }}>
-          <StatCard title="Total Files"  value={files.length}          icon={Files}       iconBg="bg-blue-50"   iconColor="text-blue-500"   delay={0}    />
-          <StatCard title="Completed"    value={completed}             icon={CheckCircle} iconBg="bg-green-50"  iconColor="text-green-500"  delay={0.07} />
-          <StatCard title="Active Jobs"  value={jobStats?.active ?? 0} icon={BrainCircuit} iconBg="bg-violet-50" iconColor="text-violet-500" delay={0.14} />
-          <StatCard title="Jobs Total"   value={jobStats ? (jobStats.waiting+jobStats.active+jobStats.completed+jobStats.failed) : 0} icon={Activity} iconBg="bg-amber-50" iconColor="text-amber-500" delay={0.21} />
+          <StatCard title="Total Files" value={files.length} icon={Files} iconBg="bg-blue-50" iconColor="text-blue-500" delay={0} />
+          <StatCard title="Completed" value={completed} icon={CheckCircle} iconBg="bg-green-50" iconColor="text-green-500" delay={0.07} />
+          <StatCard title="Active Jobs" value={jobStats?.active ?? 0} icon={BrainCircuit} iconBg="bg-violet-50" iconColor="text-violet-500" delay={0.14} />
+          <StatCard title="Jobs Total"
+            value={jobStats ? (jobStats.waiting + jobStats.active + jobStats.completed + jobStats.failed) : 0}
+            icon={Activity} iconBg="bg-amber-50" iconColor="text-amber-500" delay={0.21} />
         </div>
       )}
 
@@ -77,7 +112,7 @@ export default function DashboardPage() {
 
           {loading ? (
             <div style={{ padding: 20 }} className="space-y-2">
-              {[0,1,2,3].map(i => <div key={i} className="h-10 shimmer" />)}
+              {[0, 1, 2, 3].map(i => <div key={i} className="h-10 shimmer" />)}
             </div>
           ) : files.length === 0 ? (
             <div style={{ padding: "48px 20px", textAlign: "center" }}>
@@ -89,8 +124,8 @@ export default function DashboardPage() {
             <table className="tbl">
               <thead><tr><th>Name</th><th>Type</th><th>Status</th><th>Uploaded</th></tr></thead>
               <tbody>
-                {files.slice(0,6).map((file, i) => (
-                  <motion.tr key={file._id} initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay: i*0.04 }}>
+                {files.slice(0, 6).map((file, i) => (
+                  <motion.tr key={file._id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.04 }}>
                     <td style={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 500, color: "#1e1b4b", fontSize: 12 }}>
                       {file.originalName}
                     </td>
@@ -114,28 +149,26 @@ export default function DashboardPage() {
               <span style={{ fontSize: 13, fontWeight: 600, color: "#1e1b4b" }}>Job Queue</span>
             </div>
             {loading ? (
-              <div className="space-y-2">{[0,1,2,3].map(i=><div key={i} className="h-7 shimmer"/>)}</div>
+              <div className="space-y-2">{[0, 1, 2, 3].map(i => <div key={i} className="h-7 shimmer" />)}</div>
             ) : (
               <>
                 <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                   {[
-                    { label:"Waiting",   value: jobStats?.waiting   ?? 0, color:"#f59e0b" },
-                    { label:"Active",    value: jobStats?.active    ?? 0, color:"#8b5cf6" },
-                    { label:"Completed", value: jobStats?.completed ?? 0, color:"#10b981" },
-                    { label:"Failed",    value: jobStats?.failed    ?? 0, color:"#ef4444" },
+                    { label: "Waiting", value: jobStats?.waiting ?? 0, color: "#f59e0b" },
+                    { label: "Active", value: jobStats?.active ?? 0, color: "#8b5cf6" },
+                    { label: "Completed", value: jobStats?.completed ?? 0, color: "#10b981" },
+                    { label: "Failed", value: jobStats?.failed ?? 0, color: "#ef4444" },
                   ].map(row => (
-                    <div key={row.label} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"7px 8px", borderRadius:8 }}
-                      className="hover:bg-purple-50 transition-colors">
-                      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                        <div style={{ width:8, height:8, borderRadius:"50%", background:row.color }} />
-                        <span style={{ fontSize:13, color:"#6b7280" }}>{row.label}</span>
+                    <div key={row.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 8px", borderRadius: 8 }} className="hover:bg-purple-50 transition-colors">
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ width: 8, height: 8, borderRadius: "50%", background: row.color }} />
+                        <span style={{ fontSize: 13, color: "#6b7280" }}>{row.label}</span>
                       </div>
-                      <span style={{ fontSize:13, fontWeight:700, color:"#1e1b4b", fontVariantNumeric:"tabular-nums" }}>{row.value}</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#1e1b4b", fontVariantNumeric: "tabular-nums" }}>{row.value}</span>
                     </div>
                   ))}
                 </div>
-                <Link href="/jobs" style={{ display:"block", textAlign:"center", fontSize:12, color:"#8b5cf6", fontWeight:500, marginTop:12, padding:"6px 0", borderRadius:8, textDecoration:"none" }}
-                  className="hover:bg-purple-50 transition-colors">
+                <Link href="/jobs" style={{ display: "block", textAlign: "center", fontSize: 12, color: "#8b5cf6", fontWeight: 500, marginTop: 12, padding: "6px 0", borderRadius: 8, textDecoration: "none" }} className="hover:bg-purple-50 transition-colors">
                   View all jobs →
                 </Link>
               </>

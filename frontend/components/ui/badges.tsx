@@ -1,4 +1,4 @@
-import { cn, getStatusColor, getPriorityColor } from "@/lib/utils";
+import { cn, statusColor, priorityColor } from "@/lib/utils";
 
 interface BadgeProps {
   status?: string;
@@ -10,7 +10,7 @@ interface BadgeProps {
 export function StatusBadge({ status, className }: BadgeProps) {
   if (!status) return null;
   return (
-    <span className={cn("badge capitalize", getStatusColor(status), className)}>
+    <span className={cn("badge capitalize", statusColor(status), className)}>
       <span className="w-1.5 h-1.5 rounded-full bg-current mr-1.5 inline-block" />
       {status}
     </span>
@@ -20,7 +20,7 @@ export function StatusBadge({ status, className }: BadgeProps) {
 export function PriorityBadge({ priority, className }: BadgeProps) {
   if (!priority) return null;
   return (
-    <span className={cn("badge capitalize font-semibold", getPriorityColor(priority), className)}>
+    <span className={cn("badge capitalize font-semibold", priorityColor(priority), className)}>
       {priority}
     </span>
   );
@@ -29,12 +29,14 @@ export function PriorityBadge({ priority, className }: BadgeProps) {
 export function RoleBadge({ role }: { role: string }) {
   const isAdmin = role === "admin";
   return (
-    <span className={cn(
-      "badge capitalize",
-      isAdmin
-        ? "text-amber-400 bg-amber-400/10 border border-amber-400/20"
-        : "text-sky-400 bg-sky-400/10 border border-sky-400/20"
-    )}>
+    <span
+      className={cn(
+        "badge capitalize",
+        isAdmin
+          ? "text-amber-700 bg-amber-100"
+          : "text-violet-700 bg-violet-100",
+      )}
+    >
       {isAdmin ? "⚡" : "●"} {role}
     </span>
   );
@@ -42,25 +44,25 @@ export function RoleBadge({ role }: { role: string }) {
 
 export function TypeBadge({ type, className }: { type: string; className?: string }) {
   const colors: Record<string, string> = {
-    analysis: "text-blue-400 bg-blue-400/10",
-    insights: "text-emerald-400 bg-emerald-400/10",
-    patterns: "text-violet-400 bg-violet-400/10",
-    question: "text-amber-400 bg-amber-400/10",
-    csv: "text-teal-400 bg-teal-400/10",
-    json: "text-orange-400 bg-orange-400/10",
-    pdf: "text-red-400 bg-red-400/10",
-    image: "text-pink-400 bg-pink-400/10",
-    excel: "text-green-400 bg-green-400/10",
-    text: "text-blue-300 bg-blue-300/10",
-    system: "text-gray-400 bg-gray-400/10",
-    user: "text-indigo-400 bg-indigo-400/10",
-    file_processing: "text-cyan-400 bg-cyan-400/10",
-    ai_analysis: "text-violet-400 bg-violet-400/10",
-    security: "text-red-400 bg-red-400/10",
-    admin: "text-amber-400 bg-amber-400/10",
+    analysis: "bg-blue-100 text-blue-700",
+    insights: "bg-emerald-100 text-emerald-700",
+    patterns: "bg-violet-100 text-violet-700",
+    question: "bg-amber-100 text-amber-700",
+    csv: "bg-teal-100 text-teal-700",
+    json: "bg-orange-100 text-orange-700",
+    pdf: "bg-red-100 text-red-700",
+    image: "bg-pink-100 text-pink-700",
+    excel: "bg-green-100 text-green-700",
+    text: "bg-sky-100 text-sky-700",
+    system: "bg-slate-100 text-slate-600",
+    user: "bg-indigo-100 text-indigo-700",
+    file_processing: "bg-cyan-100 text-cyan-700",
+    ai_analysis: "bg-purple-100 text-purple-700",
+    security: "bg-red-100 text-red-700",
+    admin: "bg-amber-100 text-amber-700",
   };
   return (
-    <span className={cn("badge capitalize", colors[type] || "text-gray-400 bg-gray-400/10", className)}>
+    <span className={cn("badge capitalize", colors[type] ?? "bg-slate-100 text-slate-600", className)}>
       {type.replace(/_/g, " ")}
     </span>
   );

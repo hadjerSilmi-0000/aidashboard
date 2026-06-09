@@ -1,13 +1,11 @@
 import axios from "axios";
 
-// Use relative URLs → Next.js rewrites proxy to backend (no CORS)
 export const api = axios.create({
   baseURL: "",
   withCredentials: true,
   headers: { "Content-Type": "application/json" },
 });
 
-// Attach JWT token from localStorage on every request
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
     const token = localStorage.getItem("accessToken");
@@ -16,7 +14,6 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle 401 → redirect to login (but not 403 which is email verification)
 api.interceptors.response.use(
   (res) => res,
   (error) => {
@@ -28,7 +25,6 @@ api.interceptors.response.use(
         window.location.href = "/auth/login";
       }
     }
-    // 429 — log but don't redirect
     if (status === 429) {
       console.warn("[API] Rate limited:", error.config?.url);
     }
@@ -36,7 +32,7 @@ api.interceptors.response.use(
   }
 );
 
-// ── Auth ─────────────────────────────────────────────────────────────────
+// ── Auth ──────────────────────────────────────────────────────────────────
 export const authApi = {
   register: (d: { firstName: string; lastName: string; username: string; email: string; password: string; role?: string }) =>
     api.post("/api/auth/register", d),
@@ -87,29 +83,23 @@ export const jobsApi = {
 
 // ── AI Jobs ───────────────────────────────────────────────────────────────
 export const aiJobsApi = {
-  create: (d: {
-    dataset: object;
-    type: "analysis" | "insights" | "patterns" | "question";
-  }) => api.post("/api/ai/jobs", d),
+  create: (d: { dataset: object; type: "analysis" | "insights" | "patterns" | "question" }) =>
+    api.post("/api/ai/jobs", d),
   getById: (id: string) => api.get(`/api/ai/jobs/${id}`),
 };
 
 // ── Analytics ─────────────────────────────────────────────────────────────
 export const analyticsApi = {
-  fileOverview: (fileId: string) =>
-    api.get(`/api/analytics/file/${fileId}/overview`),
+  fileOverview: (fileId: string) => api.get(`/api/analytics/file/${fileId}/overview`),
   fileTrends: (fileId: string, range = "day") =>
     api.get(`/api/analytics/file/${fileId}/trends?range=${range}`),
-  fileErrors: (fileId: string) =>
-    api.get(`/api/analytics/file/${fileId}/errors`),
-  runAnalytics: (fileId: string) =>
-    api.post(`/api/analytics/file/${fileId}/run`),
+  fileErrors: (fileId: string) => api.get(`/api/analytics/file/${fileId}/errors`),
+  runAnalytics: (fileId: string) => api.post(`/api/analytics/file/${fileId}/run`),
 };
 
 // ── Notifications ─────────────────────────────────────────────────────────
 export const notificationsApi = {
-  list: (page = 1, limit = 20) =>
-    api.get(`/api/notification?page=${page}&limit=${limit}`),
+  list: (page = 1, limit = 20) => api.get(`/api/notification?page=${page}&limit=${limit}`),
   stats: () => api.get("/api/notification/stats"),
   markRead: (id: string) => api.patch(`/api/notification/${id}/read`),
   markAllRead: () => api.patch("/api/notification/read-all"),
@@ -118,20 +108,25 @@ export const notificationsApi = {
 
 // ── Admin ─────────────────────────────────────────────────────────────────
 export const adminApi = {
+  // Dashboard
   overview: () => api.get("/api/admin/overview"),
-  listUsers: (page = 1, limit = 20) =>
-    api.get(`/api/admin/users?page=${page}&limit=${limit}`),
+  // Users
+  listUsers: (page = 1, limit = 20) => api.get(`/api/admin/users?page=${page}&limit=${limit}`),
   getUserStats: () => api.get("/api/admin/users/stats"),
   updateUserRole: (userId: string, role: string) =>
     api.put(`/api/admin/users/${userId}/role`, { role }),
   updateUserStatus: (userId: string, status: string) =>
     api.put(`/api/admin/users/${userId}/status`, { status }),
+  // System monitoring
   systemStats: () => api.get("/api/admin/stats"),
   metrics: () => api.get("/api/admin/metrics"),
-  sendAlert: (message: string) =>
-    api.post("/api/admin/alerts", { message }),
+  adminHealth: () => api.get("/api/admin/health"),
+  getLogs: () => api.get("/api/admin/logs"),
+  // Actions
+  sendAlert: (message: string) => api.post("/api/admin/alerts", { message }),
   cleanup: () => api.post("/api/admin/cleanup"),
   revokeSessions: () => api.post("/api/admin/revoke-sessions"),
+  restartJobs: () => api.post("/api/admin/restart-jobs"),
 };
 
 // ── Health ────────────────────────────────────────────────────────────────
