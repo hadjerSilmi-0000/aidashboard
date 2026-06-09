@@ -39,7 +39,7 @@ const ProcessingStageSchema = new Schema(
     { _id: false }
 );
 
-const ErrorSchema = new Schema(
+const ProcessingErrorSchema = new Schema(
     {
         stage: String,
         message: String,
@@ -66,7 +66,7 @@ const FileSchema = new Schema(
         },
 
         processingStages: { type: [ProcessingStageSchema], default: [] },
-        errors: { type: [ErrorSchema], default: [] },
+        processingErrors: { type: [ProcessingErrorSchema], default: [] },
 
         uploadedBy: {
             type: Schema.Types.ObjectId,
@@ -75,13 +75,13 @@ const FileSchema = new Schema(
             index: true,
         },
     },
-    { timestamps: true }
+    { timestamps: true, suppressReservedKeysWarning: true }
 );
 
 // ─── Instance methods ──────────────────────────────────────────────────────
 
 FileSchema.methods.addError = async function (stage, message, code, meta = {}) {
-    this.errors.push({ stage, message, code, meta });
+    this.processingErrors.push({ stage, message, code, meta });
     this.status = FILE_STATUS.FAILED;
 
     const stageEntry = this.processingStages.find((s) => s.stage === stage);
@@ -124,10 +124,6 @@ FileSchema.methods.markCompleted = async function () {
 
 // ─── Static methods ────────────────────────────────────────────────────────
 
-/**
- * ✅ ADDED: was missing — called by fileController.js listFiles()
- * Returns all files uploaded by a specific user, newest first.
- */
 FileSchema.statics.findByUser = function (userId, { limit = 50, skip = 0 } = {}) {
     return this.find({ uploadedBy: userId })
         .sort({ createdAt: -1 })
@@ -135,9 +131,6 @@ FileSchema.statics.findByUser = function (userId, { limit = 50, skip = 0 } = {})
         .limit(limit);
 };
 
-/**
- * Returns files by status for a given user.
- */
 FileSchema.statics.findByUserAndStatus = function (userId, status) {
     return this.find({ uploadedBy: userId, status }).sort({ createdAt: -1 });
 };

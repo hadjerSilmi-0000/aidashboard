@@ -1,6 +1,7 @@
 import app from "./src/app.js";
 import configManager from "./src/config/index.js";
 import logger from "./src/utils/logger.js";
+import "./app.js";
 import { initSocket } from "./src/socket/socketHandler.js";
 
 const PORT = process.env.PORT || 5000;
